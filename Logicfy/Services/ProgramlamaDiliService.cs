@@ -38,6 +38,22 @@ namespace Logicfy.Services
 
             return _mapper.Map<ProgramlamaDiliDto>(entity);
         }
+        public async Task<ProgramlamaDiliDto?> UpdateAsync(int id, ProgramlamaDiliCreateDto dto)
+        {
+            var repo = _unitOfWork.Repository<ProgramlamaDili>();
+            var entity = await repo.GetByIdAsync(id);
+
+            if (entity == null)
+                return null;
+
+            entity.Ad = dto.Ad;
+
+            repo.Update(entity);
+            await _unitOfWork.SaveAsync();
+
+            return _mapper.Map<ProgramlamaDiliDto>(entity);
+        }
+
 
         public async Task<bool> DeleteAsync(int id)
         {

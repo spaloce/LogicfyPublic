@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Logicfy.Data.UnitOfWork;
-using Logicfy.Dtos;
 using Logicfy.Dtos.Ders;
 using Logicfy.Models;
 using Logicfy.Services.Interfaces;
@@ -19,44 +18,60 @@ namespace Logicfy.Services
             _mapper = mapper;
         }
 
-        // Tüm dersler
+        // ---------------------------------------------------------
+        // TÜM DERSLER
+        // ---------------------------------------------------------
         public async Task<List<DersDto>> GetAllAsync()
         {
-            var entities = await _unitOfWork.Repository<Ders>()
+            var list = await _unitOfWork.Repository<Ders>()
                 .Query()
-                .Include(x => x.Sorular)
+                .OrderBy(x => x.Sira)
                 .ToListAsync();
 
-            return _mapper.Map<List<DersDto>>(entities);
+            return _mapper.Map<List<DersDto>>(list);
         }
 
-        // Belirli bir kısma ait dersler
+        // ---------------------------------------------------------
+        // KISIMA AİT DERSLER
+        // ---------------------------------------------------------
         public async Task<List<DersDto>> GetByKisimIdAsync(int kisimId)
         {
-            var entities = await _unitOfWork.Repository<Ders>()
+            var list = await _unitOfWork.Repository<Ders>()
                 .Query()
                 .Where(x => x.KisimId == kisimId)
-                .Include(x => x.Sorular)
+                .OrderBy(x => x.Sira)
                 .ToListAsync();
 
-            return _mapper.Map<List<DersDto>>(entities);
+            return _mapper.Map<List<DersDto>>(list);
         }
 
-        // Id ile getirme
-        public async Task<DersDto> GetByIdAsync(int id)
+        // ---------------------------------------------------------
+        // TEK DERS
+        // ---------------------------------------------------------
+        public async Task<DersDto?> GetByIdAsync(int id)
         {
-            var entity = await _unitOfWork.Repository<Ders>()
-                .Query()
-                .Include(x => x.Sorular)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var entity = await _unitOfWork.Repository<Ders>().GetByIdAsync(id);
+
+            if (entity == null)
+                return null;
 
             return _mapper.Map<DersDto>(entity);
         }
 
-        // Yeni ders ekleme
-        public async Task<DersDto> CreateAsync(DersCreateDto dto)
+        // ---------------------------------------------------------
+        // DERS OLUŞTUR
+        // ---------------------------------------------------------
+        public async Task<DersDto> CreateAsync(int kisimId, DersCreateDto dto)
         {
-            var entity = _mapper.Map<Ders>(dto);
+            var entity = new Ders
+            {
+                KisimId = kisimId,
+                Baslik = dto.Baslik,
+                Sira = dto.Sira,
+                TahminiSure = dto.TahminiSure,
+                SoruSayisiCache = 0,
+                ZorlukSeviyesi = dto.ZorlukSeviyesi
+            };
 
             await _unitOfWork.Repository<Ders>().AddAsync(entity);
             await _unitOfWork.SaveAsync();
@@ -64,7 +79,31 @@ namespace Logicfy.Services
             return _mapper.Map<DersDto>(entity);
         }
 
-        // Silme
+        // ---------------------------------------------------------
+        // DERS GÜNCELLE
+        // ---------------------------------------------------------
+        public async Task<DersDto?> UpdateAsync(int id, DersCreateDto dto)
+        {
+            var repo = _unitOfWork.Repository<Ders>();
+            var entity = await repo.GetByIdAsync(id);
+
+            if (entity == null)
+                return null;
+
+            entity.Baslik = dto.Baslik;
+            entity.Sira = dto.Sira;
+            entity.TahminiSure = dto.TahminiSure;
+            entity.ZorlukSeviyesi = dto.ZorlukSeviyesi;
+
+            repo.Update(entity);
+            await _unitOfWork.SaveAsync();
+
+            return _mapper.Map<DersDto>(entity);
+        }
+
+        // ---------------------------------------------------------
+        // DERS SİL
+        // ---------------------------------------------------------
         public async Task<bool> DeleteAsync(int id)
         {
             var repo = _unitOfWork.Repository<Ders>();
@@ -75,7 +114,6 @@ namespace Logicfy.Services
 
             repo.Remove(entity);
             await _unitOfWork.SaveAsync();
-
             return true;
         }
     }

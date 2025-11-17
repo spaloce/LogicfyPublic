@@ -3,6 +3,7 @@ using Logicfy.Data.UnitOfWork;
 using Logicfy.Dtos.Unite;
 using Logicfy.Models;
 using Logicfy.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Logicfy.Services
 {
@@ -17,33 +18,57 @@ namespace Logicfy.Services
             _mapper = mapper;
         }
 
-        // Tüm üniteleri getir
+        // ---------------------------------------------------------
+        // TÜM ÜNİTELER
+        // ---------------------------------------------------------
         public async Task<List<UniteDto>> GetAllAsync()
         {
-            var entities = await _unitOfWork.Repository<Unite>().GetAllAsync();
+            var entities = await _unitOfWork.Repository<Unite>()
+                .Query()
+                .OrderBy(x => x.Sira)
+                .ToListAsync();
+
             return _mapper.Map<List<UniteDto>>(entities);
         }
 
-        // Belirli bir programlama diline ait üniteler
-        public async Task<List<UniteDto>> GetByLanguageIdAsync(int languageId)
+        // ---------------------------------------------------------
+        // BİR DİLE AİT ÜNİTELER
+        // ---------------------------------------------------------
+        public async Task<List<UniteDto>> GetByDilIdAsync(int dilId)
         {
             var entities = await _unitOfWork.Repository<Unite>()
-                .FindAsync(x => x.ProgramlamaDiliId == languageId);
+                .Query()
+                .Where(x => x.ProgramlamaDiliId == dilId)
+                .OrderBy(x => x.Sira)
+                .ToListAsync();
 
             return _mapper.Map<List<UniteDto>>(entities);
         }
 
-        // Id ile getirme
-        public async Task<UniteDto> GetByIdAsync(int id)
+        // ---------------------------------------------------------
+        // TEK ÜNİTE GETİR
+        // ---------------------------------------------------------
+        public async Task<UniteDto?> GetByIdAsync(int id)
         {
             var entity = await _unitOfWork.Repository<Unite>().GetByIdAsync(id);
+
+            if (entity == null)
+                return null;
+
             return _mapper.Map<UniteDto>(entity);
         }
 
-        // Yeni ünite oluştur
-        public async Task<UniteDto> CreateAsync(UniteCreateDto dto)
+        // ---------------------------------------------------------
+        // ÜNİTE OLUŞTUR (DilId + DTO)
+        // ---------------------------------------------------------
+        public async Task<UniteDto> CreateAsync(int dilId, UniteCreateDto dto)
         {
-            var entity = _mapper.Map<Unite>(dto);
+            var entity = new Unite
+            {
+                ProgramlamaDiliId = dilId,
+                Baslik = dto.Baslik,
+                Sira = dto.Sira
+            };
 
             await _unitOfWork.Repository<Unite>().AddAsync(entity);
             await _unitOfWork.SaveAsync();
@@ -51,7 +76,29 @@ namespace Logicfy.Services
             return _mapper.Map<UniteDto>(entity);
         }
 
-        // Silme işlemi
+        // ---------------------------------------------------------
+        // ÜNİTE GÜNCELLE
+        // ---------------------------------------------------------
+        public async Task<UniteDto?> UpdateAsync(int id, UniteCreateDto dto)
+        {
+            var repo = _unitOfWork.Repository<Unite>();
+            var entity = await repo.GetByIdAsync(id);
+
+            if (entity == null)
+                return null;
+
+            entity.Baslik = dto.Baslik;
+            entity.Sira = dto.Sira;
+
+            repo.Update(entity);
+            await _unitOfWork.SaveAsync();
+
+            return _mapper.Map<UniteDto>(entity);
+        }
+
+        // ---------------------------------------------------------
+        // ÜNİTE SİL
+        // ---------------------------------------------------------
         public async Task<bool> DeleteAsync(int id)
         {
             var repo = _unitOfWork.Repository<Unite>();
@@ -62,6 +109,7 @@ namespace Logicfy.Services
 
             repo.Remove(entity);
             await _unitOfWork.SaveAsync();
+
             return true;
         }
     }

@@ -221,5 +221,38 @@ namespace Logicfy.Services
 
             await _unitOfWork.SaveAsync();
         }
+
+        // ---------------------------------------------------------
+        //  DERS PROGRESS GET
+        // ---------------------------------------------------------
+        public async Task<KullaniciDersIlerleme?> GetDersProgressAsync(int kullaniciId, int dersId)
+        {
+            return await _unitOfWork.Repository<KullaniciDersIlerleme>()
+                .Query()
+                .Include(x => x.Ders)
+                .FirstOrDefaultAsync(x => x.KullaniciId == kullaniciId && x.DersId == dersId);
+        }
+
+        // ---------------------------------------------------------
+        //  KISIM PROGRESS GET
+        // ---------------------------------------------------------
+        public async Task<KullaniciKisimProgress?> GetKisimProgressAsync(int kullaniciId, int kisimId)
+        {
+            return await _unitOfWork.Repository<KullaniciKisimProgress>()
+                .Query()
+                .Include(x => x.Kisim)
+                .FirstOrDefaultAsync(x => x.KullaniciId == kullaniciId && x.KisimId == kisimId);
+        }
+
+        // ---------------------------------------------------------
+        //  UNITE PROGRESS GET
+        // ---------------------------------------------------------
+        public async Task<KullaniciUnitProgress?> GetUniteProgressAsync(int kullaniciId, int uniteId)
+        {
+            return await _unitOfWork.Repository<KullaniciUnitProgress>()
+                .Query()
+                .Include(x => x.Unite)
+                .FirstOrDefaultAsync(x => x.KullaniciId == kullaniciId && x.UniteId == uniteId);
+        }
     }
 }

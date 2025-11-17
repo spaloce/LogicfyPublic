@@ -1,10 +1,10 @@
 ﻿using AutoMapper;
 using Logicfy.Data.UnitOfWork;
-using Logicfy.Dtos;
 using Logicfy.Dtos.Soru;
 using Logicfy.Models;
 using Logicfy.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Logicfy.Services
 {
@@ -19,167 +19,58 @@ namespace Logicfy.Services
             _mapper = mapper;
         }
 
-        // -------------------------------------------------------------------
-        //  SORU LİSTELEME
-        // -------------------------------------------------------------------
-
-        public async Task<List<SoruDto>> GetByDersIdAsync(int dersId)
+        // ---------------------------------------------------------
+        // TÜM SORULAR (Admin)
+        // ---------------------------------------------------------
+        public async Task<List<SoruDto>> GetAllAsync()
         {
-            var sorular = await _unitOfWork.Repository<Soru>()
+            var list = await _unitOfWork.Repository<Soru>()
                 .Query()
-                .Where(x => x.DersId == dersId)
-                .Include(x => x.Secenekler)
                 .Include(x => x.DogruCevap)
+                .Include(x => x.Secenekler)
+                .OrderBy(x => x.Id)
                 .ToListAsync();
 
-            var list = new List<SoruDto>();
-
-            foreach (var soru in sorular)
-            {
-                var dto = _mapper.Map<SoruDto>(soru);
-
-                // TIP 2
-                if (soru.SoruTipi == 2)
-                {
-                    var kelime = await _unitOfWork.Repository<SoruKelimeBlok>()
-                        .Query()
-                        .FirstOrDefaultAsync(x => x.SoruId == soru.Id);
-
-                    if (kelime != null)
-                    {
-                        dto.Tip2 = new Tip2Dto
-                        {
-                            Id = kelime.Id,
-                            DogruKod = kelime.DogruKod,
-                            Kelimeler = System.Text.Json.JsonSerializer.Deserialize<List<string>>(kelime.KelimelerJson)
-                        };
-                    }
-                }
-
-                // TIP 3
-                if (soru.SoruTipi == 3)
-                {
-                    var cozumler = await _unitOfWork.Repository<SoruFonksiyonCozum>()
-                        .Query()
-                        .Where(x => x.SoruId == soru.Id)
-                        .ToListAsync();
-
-                    dto.Tip3 = cozumler.Select(c => new Tip3CozumDto
-                    {
-                        Id = c.Id,
-                        CozumKod = c.CozumKod
-                    }).ToList();
-                }
-
-                // TIP 4
-                if (soru.SoruTipi == 4)
-                {
-                    var preview = await _unitOfWork.Repository<SoruCanliPreview>()
-                        .Query()
-                        .FirstOrDefaultAsync(x => x.SoruId == soru.Id);
-
-                    if (preview != null)
-                    {
-                        dto.Tip4 = new Tip4Dto
-                        {
-                            Id = preview.Id,
-                            DogruHtml = preview.DogruHtml,
-                            DogruCss = preview.DogruCss,
-                            GerekenEtiketler = System.Text.Json.JsonSerializer.Deserialize<List<string>>(preview.GerekenEtiketlerJson),
-                            GerekenStiller = System.Text.Json.JsonSerializer.Deserialize<List<string>>(preview.GerekenStillerJson)
-                        };
-                    }
-                }
-
-                list.Add(dto);
-            }
-
-            return list;
+            return _mapper.Map<List<SoruDto>>(list);
         }
 
-
-        public async Task<SoruDto> GetByIdAsync(int id)
+        // ---------------------------------------------------------
+        // DERSİN TÜM SORULARI
+        // ---------------------------------------------------------
+        public async Task<List<SoruDto>> GetByDersIdAsync(int dersId)
         {
-            var soru = await _unitOfWork.Repository<Soru>()
+            var list = await _unitOfWork.Repository<Soru>()
+                .Query()
+                .Where(x => x.DersId == dersId)
+                .Include(x => x.DogruCevap)
+                .Include(x => x.Secenekler)
+                .ToListAsync();
+
+            return _mapper.Map<List<SoruDto>>(list);
+        }
+
+        // ---------------------------------------------------------
+        // TEK SORU
+        // ---------------------------------------------------------
+        public async Task<SoruDto?> GetByIdAsync(int id)
+        {
+            var entity = await _unitOfWork.Repository<Soru>()
                 .Query()
                 .Include(x => x.Secenekler)
                 .Include(x => x.DogruCevap)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (soru == null)
-                return null;
-
-            var dto = _mapper.Map<SoruDto>(soru);
-
-            // TIP 2 – Kelime Blok
-            if (soru.SoruTipi == 2)
-            {
-                var kelime = await _unitOfWork.Repository<SoruKelimeBlok>()
-                    .Query()
-                    .FirstOrDefaultAsync(x => x.SoruId == soru.Id);
-
-                if (kelime != null)
-                {
-                    dto.Tip2 = new Tip2Dto
-                    {
-                        Id = kelime.Id,
-                        DogruKod = kelime.DogruKod,
-                        Kelimeler = System.Text.Json.JsonSerializer.Deserialize<List<string>>(kelime.KelimelerJson)
-                    };
-                }
-            }
-
-            // TIP 3 – Fonksiyon Çözümleri
-            if (soru.SoruTipi == 3)
-            {
-                var cozumler = await _unitOfWork.Repository<SoruFonksiyonCozum>()
-                    .Query()
-                    .Where(x => x.SoruId == soru.Id)
-                    .ToListAsync();
-
-                dto.Tip3 = cozumler
-                    .Select(x => new Tip3CozumDto
-                    {
-                        Id = x.Id,
-                        CozumKod = x.CozumKod
-                    })
-                    .ToList();
-            }
-
-            // TIP 4 – HTML/CSS Preview
-            if (soru.SoruTipi == 4)
-            {
-                var preview = await _unitOfWork.Repository<SoruCanliPreview>()
-                    .Query()
-                    .FirstOrDefaultAsync(x => x.SoruId == soru.Id);
-
-                if (preview != null)
-                {
-                    dto.Tip4 = new Tip4Dto
-                    {
-                        Id = preview.Id,
-                        DogruHtml = preview.DogruHtml,
-                        DogruCss = preview.DogruCss,
-                        GerekenEtiketler = System.Text.Json.JsonSerializer.Deserialize<List<string>>(preview.GerekenEtiketlerJson),
-                        GerekenStiller = System.Text.Json.JsonSerializer.Deserialize<List<string>>(preview.GerekenStillerJson)
-                    };
-                }
-            }
-
-            return dto;
+            return _mapper.Map<SoruDto>(entity);
         }
 
-
-        // -------------------------------------------------------------------
-        //  TIP 1: ÇOKTAN SEÇMELİ SORU (4 seçenek)
-        // -------------------------------------------------------------------
-
+        // ---------------------------------------------------------
+        // TIP 1 - ÇOKTAN SEÇMELİ OLUŞTUR
+        // ---------------------------------------------------------
         public async Task<SoruDto> CreateTip1Async(int dersId, SoruTip1CreateDto dto)
         {
             var soruRepo = _unitOfWork.Repository<Soru>();
             var secenekRepo = _unitOfWork.Repository<SoruSecenek>();
 
-            // 1) Önce soruyu ekle
             var soru = new Soru
             {
                 DersId = dersId,
@@ -188,26 +79,68 @@ namespace Logicfy.Services
             };
 
             await soruRepo.AddAsync(soru);
-            await _unitOfWork.SaveAsync(); // ID oluşsun
+            await _unitOfWork.SaveAsync();
 
-            // 2) Seçenekleri ekle
-            var secenekEntities = new List<SoruSecenek>();
+            var secenekler = new List<SoruSecenek>();
 
             for (int i = 0; i < dto.Secenekler.Count; i++)
             {
-                secenekEntities.Add(new SoruSecenek
+                secenekler.Add(new SoruSecenek
                 {
                     SoruId = soru.Id,
                     SecenekMetni = dto.Secenekler[i]
                 });
             }
 
-            await secenekRepo.AddRangeAsync(secenekEntities);
+            await secenekRepo.AddRangeAsync(secenekler);
             await _unitOfWork.SaveAsync();
 
-            // 3) Doğru cevabı işaretle
-            var dogru = secenekEntities[dto.DogruIndex];
-            soru.DogruCevapId = dogru.Id;
+            soru.DogruCevapId = secenekler[dto.DogruIndex].Id;
+            soruRepo.Update(soru);
+            await _unitOfWork.SaveAsync();
+
+            return _mapper.Map<SoruDto>(soru);
+        }
+
+        // ---------------------------------------------------------
+        // TIP 1 - GÜNCELLE
+        // ---------------------------------------------------------
+        public async Task<SoruDto?> UpdateTip1Async(int id, SoruTip1CreateDto dto)
+        {
+            var soruRepo = _unitOfWork.Repository<Soru>();
+            var secenekRepo = _unitOfWork.Repository<SoruSecenek>();
+
+            var soru = await soruRepo.Query()
+                .Include(x => x.Secenekler)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (soru == null)
+                return null;
+
+            soru.SoruMetni = dto.SoruMetni;
+
+            // önce eski seçenekleri sil
+            foreach (var s in soru.Secenekler)
+                secenekRepo.Remove(s);
+
+            await _unitOfWork.SaveAsync();
+
+            // yeni seçenekleri ekle
+            var yeni = new List<SoruSecenek>();
+            foreach (var sec in dto.Secenekler)
+            {
+                yeni.Add(new SoruSecenek
+                {
+                    SoruId = soru.Id,
+                    SecenekMetni = sec
+                });
+            }
+
+            await secenekRepo.AddRangeAsync(yeni);
+            await _unitOfWork.SaveAsync();
+
+            // doğru cevabı güncelle
+            soru.DogruCevapId = yeni[dto.DogruIndex].Id;
 
             soruRepo.Update(soru);
             await _unitOfWork.SaveAsync();
@@ -215,14 +148,11 @@ namespace Logicfy.Services
             return _mapper.Map<SoruDto>(soru);
         }
 
-        // -------------------------------------------------------------------
-        //  TIP 2: KELİME BLOK TAMAMLAMA SORUSU
-        // -------------------------------------------------------------------
-
+        // ---------------------------------------------------------
+        // TIP 2 - OLUŞTUR
+        // ---------------------------------------------------------
         public async Task<SoruDto> CreateTip2Async(int dersId, SoruTip2CreateDto dto)
         {
-            var soruRepo = _unitOfWork.Repository<Soru>();
-
             var soru = new Soru
             {
                 DersId = dersId,
@@ -230,28 +160,50 @@ namespace Logicfy.Services
                 SoruTipi = 2
             };
 
-            await soruRepo.AddAsync(soru);
-            await _unitOfWork.SaveAsync(); // ID oluşsun
+            await _unitOfWork.Repository<Soru>().AddAsync(soru);
+            await _unitOfWork.SaveAsync();
 
-            // Tip2 özel tablo
-            var kelimeRepo = _unitOfWork.Repository<SoruKelimeBlok>();
             var kelime = new SoruKelimeBlok
             {
                 SoruId = soru.Id,
                 DogruKod = dto.DogruKod,
-                KelimelerJson = System.Text.Json.JsonSerializer.Serialize(dto.Kelimeler)
+                KelimelerJson = JsonSerializer.Serialize(dto.Kelimeler)
             };
 
-            await kelimeRepo.AddAsync(kelime);
+            await _unitOfWork.Repository<SoruKelimeBlok>().AddAsync(kelime);
             await _unitOfWork.SaveAsync();
 
             return _mapper.Map<SoruDto>(soru);
         }
 
-        // -------------------------------------------------------------------
-        //  TIP 3: FONKSİYON TAMAMLAMA SORUSU
-        // -------------------------------------------------------------------
+        // ---------------------------------------------------------
+        // TIP 2 - GÜNCELLE
+        // ---------------------------------------------------------
+        public async Task<SoruDto?> UpdateTip2Async(int id, SoruTip2CreateDto dto)
+        {
+            var soru = await _unitOfWork.Repository<Soru>().GetByIdAsync(id);
+            if (soru == null)
+                return null;
 
+            var kelimeRepo = _unitOfWork.Repository<SoruKelimeBlok>();
+            var blok = await kelimeRepo.Query()
+                .FirstOrDefaultAsync(x => x.SoruId == soru.Id);
+
+            soru.SoruMetni = dto.SoruMetni;
+
+            blok.DogruKod = dto.DogruKod;
+            blok.KelimelerJson = JsonSerializer.Serialize(dto.Kelimeler);
+
+            kelimeRepo.Update(blok);
+            _unitOfWork.Repository<Soru>().Update(soru);
+            await _unitOfWork.SaveAsync();
+
+            return _mapper.Map<SoruDto>(soru);
+        }
+
+        // ---------------------------------------------------------
+        // TIP 3 - OLUŞTUR
+        // ---------------------------------------------------------
         public async Task<SoruDto> CreateTip3Async(int dersId, SoruTip3CreateDto dto)
         {
             var soru = new Soru
@@ -264,26 +216,62 @@ namespace Logicfy.Services
             await _unitOfWork.Repository<Soru>().AddAsync(soru);
             await _unitOfWork.SaveAsync();
 
-            var cozumRepo = _unitOfWork.Repository<SoruFonksiyonCozum>();
+            var repo = _unitOfWork.Repository<SoruFonksiyonCozum>();
 
-            foreach (var coz in dto.DogruCozumler)
+            foreach (var c in dto.DogruCozumler)
             {
-                await cozumRepo.AddAsync(new SoruFonksiyonCozum
+                await repo.AddAsync(new SoruFonksiyonCozum
                 {
                     SoruId = soru.Id,
-                    CozumKod = coz
+                    CozumKod = c
                 });
             }
 
+            await _unitOfWork.SaveAsync();
+            return _mapper.Map<SoruDto>(soru);
+        }
+
+        // ---------------------------------------------------------
+        // TIP 3 - GÜNCELLE
+        // ---------------------------------------------------------
+        public async Task<SoruDto?> UpdateTip3Async(int id, SoruTip3CreateDto dto)
+        {
+            var soru = await _unitOfWork.Repository<Soru>().GetByIdAsync(id);
+            if (soru == null)
+                return null;
+
+            soru.SoruMetni = dto.SoruMetni;
+
+            var repo = _unitOfWork.Repository<SoruFonksiyonCozum>();
+            var cozums = await repo.Query()
+                .Where(x => x.SoruId == soru.Id)
+                .ToListAsync();
+
+            // eski çözümleri sil
+            foreach (var c in cozums)
+                repo.Remove(c);
+
+            await _unitOfWork.SaveAsync();
+
+            // yeni çözümler ekle
+            foreach (var c in dto.DogruCozumler)
+            {
+                await repo.AddAsync(new SoruFonksiyonCozum
+                {
+                    SoruId = soru.Id,
+                    CozumKod = c
+                });
+            }
+
+            _unitOfWork.Repository<Soru>().Update(soru);
             await _unitOfWork.SaveAsync();
 
             return _mapper.Map<SoruDto>(soru);
         }
 
-        // -------------------------------------------------------------------
-        //  TIP 4: HTML/CSS CANLI ÖNİZLEME
-        // -------------------------------------------------------------------
-
+        // ---------------------------------------------------------
+        // TIP 4 - OLUŞTUR
+        // ---------------------------------------------------------
         public async Task<SoruDto> CreateTip4Async(int dersId, SoruTip4CreateDto dto)
         {
             var soru = new Soru
@@ -296,36 +284,60 @@ namespace Logicfy.Services
             await _unitOfWork.Repository<Soru>().AddAsync(soru);
             await _unitOfWork.SaveAsync();
 
-            var previewRepo = _unitOfWork.Repository<SoruCanliPreview>();
-
             var preview = new SoruCanliPreview
             {
                 SoruId = soru.Id,
                 DogruHtml = dto.DogruHtml,
                 DogruCss = dto.DogruCss,
-                GerekenEtiketlerJson = System.Text.Json.JsonSerializer.Serialize(dto.GerekenEtiketler),
-                GerekenStillerJson = System.Text.Json.JsonSerializer.Serialize(dto.GerekenStiller)
+                GerekenEtiketlerJson = JsonSerializer.Serialize(dto.GerekenEtiketler),
+                GerekenStillerJson = JsonSerializer.Serialize(dto.GerekenStiller)
             };
 
-            await previewRepo.AddAsync(preview);
+            await _unitOfWork.Repository<SoruCanliPreview>().AddAsync(preview);
             await _unitOfWork.SaveAsync();
 
             return _mapper.Map<SoruDto>(soru);
         }
 
-        // -------------------------------------------------------------------
-        //  SORU SİLME
-        // -------------------------------------------------------------------
+        // ---------------------------------------------------------
+        // TIP 4 - GÜNCELLE
+        // ---------------------------------------------------------
+        public async Task<SoruDto?> UpdateTip4Async(int id, SoruTip4CreateDto dto)
+        {
+            var soru = await _unitOfWork.Repository<Soru>().GetByIdAsync(id);
+            if (soru == null)
+                return null;
 
+            soru.SoruMetni = dto.SoruMetni;
+
+            var repo = _unitOfWork.Repository<SoruCanliPreview>();
+            var preview = await repo.Query()
+                .FirstOrDefaultAsync(x => x.SoruId == soru.Id);
+
+            preview.DogruHtml = dto.DogruHtml;
+            preview.DogruCss = dto.DogruCss;
+            preview.GerekenEtiketlerJson = JsonSerializer.Serialize(dto.GerekenEtiketler);
+            preview.GerekenStillerJson = JsonSerializer.Serialize(dto.GerekenStiller);
+
+            repo.Update(preview);
+            _unitOfWork.Repository<Soru>().Update(soru);
+            await _unitOfWork.SaveAsync();
+
+            return _mapper.Map<SoruDto>(soru);
+        }
+
+        // ---------------------------------------------------------
+        // SİL
+        // ---------------------------------------------------------
         public async Task<bool> DeleteAsync(int id)
         {
-            var soruRepo = _unitOfWork.Repository<Soru>();
-            var soru = await soruRepo.GetByIdAsync(id);
+            var repo = _unitOfWork.Repository<Soru>();
+            var entity = await repo.GetByIdAsync(id);
 
-            if (soru == null)
+            if (entity == null)
                 return false;
 
-            soruRepo.Remove(soru);
+            repo.Remove(entity);
             await _unitOfWork.SaveAsync();
 
             return true;

@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using Logicfy.Data.UnitOfWork;
-using Logicfy.Dtos;
 using Logicfy.Dtos.Kisim;
 using Logicfy.Models;
 using Logicfy.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Logicfy.Services
 {
@@ -18,33 +18,57 @@ namespace Logicfy.Services
             _mapper = mapper;
         }
 
-        // Tüm kısımlar
+        // ---------------------------------------------------------
+        // TÜM KISIMLAR
+        // ---------------------------------------------------------
         public async Task<List<KisimDto>> GetAllAsync()
         {
-            var entities = await _unitOfWork.Repository<Kisim>().GetAllAsync();
+            var entities = await _unitOfWork.Repository<Kisim>()
+                .Query()
+                .OrderBy(x => x.Sira)
+                .ToListAsync();
+
             return _mapper.Map<List<KisimDto>>(entities);
         }
 
-        // Belirli bir üniteye ait kısımlar
+        // ---------------------------------------------------------
+        // ÜNİTEYE AİT TÜM KISIMLAR
+        // ---------------------------------------------------------
         public async Task<List<KisimDto>> GetByUniteIdAsync(int uniteId)
         {
             var entities = await _unitOfWork.Repository<Kisim>()
-                .FindAsync(x => x.UniteId == uniteId);
+                .Query()
+                .Where(x => x.UniteId == uniteId)
+                .OrderBy(x => x.Sira)
+                .ToListAsync();
 
             return _mapper.Map<List<KisimDto>>(entities);
         }
 
-        // Id ile getirme
-        public async Task<KisimDto> GetByIdAsync(int id)
+        // ---------------------------------------------------------
+        // TEK KISIM
+        // ---------------------------------------------------------
+        public async Task<KisimDto?> GetByIdAsync(int id)
         {
             var entity = await _unitOfWork.Repository<Kisim>().GetByIdAsync(id);
+
+            if (entity == null)
+                return null;
+
             return _mapper.Map<KisimDto>(entity);
         }
 
-        // Yeni kısım oluştur
-        public async Task<KisimDto> CreateAsync(KisimCreateDto dto)
+        // ---------------------------------------------------------
+        // KISIM OLUŞTUR
+        // ---------------------------------------------------------
+        public async Task<KisimDto> CreateAsync(int uniteId, KisimCreateDto dto)
         {
-            var entity = _mapper.Map<Kisim>(dto);
+            var entity = new Kisim
+            {
+                UniteId = uniteId,
+                Baslik = dto.Baslik,
+                Sira = dto.Sira
+            };
 
             await _unitOfWork.Repository<Kisim>().AddAsync(entity);
             await _unitOfWork.SaveAsync();
@@ -52,7 +76,29 @@ namespace Logicfy.Services
             return _mapper.Map<KisimDto>(entity);
         }
 
-        // Silme
+        // ---------------------------------------------------------
+        // KISIM GÜNCELLE
+        // ---------------------------------------------------------
+        public async Task<KisimDto?> UpdateAsync(int id, KisimCreateDto dto)
+        {
+            var repo = _unitOfWork.Repository<Kisim>();
+            var entity = await repo.GetByIdAsync(id);
+
+            if (entity == null)
+                return null;
+
+            entity.Baslik = dto.Baslik;
+            entity.Sira = dto.Sira;
+
+            repo.Update(entity);
+            await _unitOfWork.SaveAsync();
+
+            return _mapper.Map<KisimDto>(entity);
+        }
+
+        // ---------------------------------------------------------
+        // KISIM SİL
+        // ---------------------------------------------------------
         public async Task<bool> DeleteAsync(int id)
         {
             var repo = _unitOfWork.Repository<Kisim>();

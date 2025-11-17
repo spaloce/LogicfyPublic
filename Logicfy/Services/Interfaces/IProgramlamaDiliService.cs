@@ -9,6 +9,7 @@ namespace Logicfy.Services.Interfaces
         Task<ProgramlamaDiliDto> GetByIdAsync(int id);
 
         Task<ProgramlamaDiliDto> CreateAsync(ProgramlamaDiliCreateDto dto);
+        Task<ProgramlamaDiliDto?> UpdateAsync(int id, ProgramlamaDiliCreateDto dto);
         Task<bool> DeleteAsync(int id);
     }
 }

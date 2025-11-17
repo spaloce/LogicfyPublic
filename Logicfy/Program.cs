@@ -4,11 +4,14 @@ using Logicfy.Data;
 using Logicfy.Data.Repositories;
 using Logicfy.Data.Repositories.Interfaces;
 using Logicfy.Data.UnitOfWork;
+using Logicfy.Helpers;
 using Logicfy.Services;
 using Logicfy.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +75,26 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ------------------------------------------------------
+// JWT Authentication
+builder.Services
+    .AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
+            ),
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true
+        };
+    });
+
 
 // ------------------------------------------------------
 // 7) SWAGGER
@@ -131,6 +154,7 @@ builder.Services.AddScoped<IKullaniciService, KullaniciService>();
 // === PROGRESS MOTORU ===
 builder.Services.AddScoped<IKullaniciProgressService, KullaniciProgressService>();
 
+builder.Services.AddSingleton<JwtTokenHelper>();
 
 
 // ------------------------------------------------------
@@ -150,6 +174,7 @@ app.UseCors("LogicfyCors");
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
