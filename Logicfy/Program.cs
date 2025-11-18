@@ -4,9 +4,9 @@ using Logicfy.Data;
 using Logicfy.Data.Repositories;
 using Logicfy.Data.Repositories.Interfaces;
 using Logicfy.Data.UnitOfWork;
-using Logicfy.Helpers;
 using Logicfy.Services;
 using Logicfy.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -76,24 +76,31 @@ builder.Services.AddCors(options =>
 });
 
 // ------------------------------------------------------
-// JWT Authentication
-builder.Services
-    .AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
+// JWT Configuration
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrEmpty(jwtKey) || jwtKey.Length < 32)
+{
+    // Fallback key - production'da asla kullanmayın!
+    jwtKey = "bu-backup-anahtar-32-karakter-uzunlugunda";
+}
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
-            ),
             ValidateIssuer = true,
             ValidateAudience = true,
+            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidateLifetime = true
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero
         };
     });
+
+builder.Services.AddAuthorization();
 
 
 // ------------------------------------------------------

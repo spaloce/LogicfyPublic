@@ -1,7 +1,10 @@
 ﻿using Logicfy.Controllers;
+using Logicfy.Data.UnitOfWork;
 using Logicfy.Dtos.Unite;
+using Logicfy.Models;
 using Logicfy.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Logicfy.Api.Controllers
 {
@@ -9,11 +12,31 @@ namespace Logicfy.Api.Controllers
     public class UniteController : BaseController
     {
         private readonly IUniteService _service;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public UniteController(IUniteService service)
+        public UniteController(IUniteService service, IUnitOfWork unitOfWork)
         {
             _service = service;
+            _unitOfWork = unitOfWork;
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var repo = _unitOfWork.Repository<Unite>();
+
+            var list = await repo.Query()
+                .OrderBy(x => x.Sira)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                status = true,
+                message = "Üniteler yüklendi",
+                data = list
+            });
+        }
+
 
         // ---------------------------------------------------------
         // BİR DİLE AİT ÜNİTELER
@@ -74,6 +97,27 @@ namespace Logicfy.Api.Controllers
                 return Fail("Ünite bulunamadı.");
 
             return Success("Silindi.");
+        }
+
+        // -------------------------------------------------------
+        // GET api/unite/dil/{dilId}
+        // -------------------------------------------------------
+        [HttpGet("dil/{dilId:int}")]
+        public async Task<IActionResult> GetByDil(int dilId)
+        {
+            var uniteRepo = _unitOfWork.Repository<Unite>();
+
+            var uniteler = await uniteRepo.Query()
+                .Where(x => x.ProgramlamaDiliId == dilId)
+                .OrderBy(x => x.Sira)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                status = true,
+                message = "Üniteler yüklendi",
+                data = uniteler
+            });
         }
     }
 }

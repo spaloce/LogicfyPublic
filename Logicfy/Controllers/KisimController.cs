@@ -1,7 +1,10 @@
 ﻿using Logicfy.Controllers;
+using Logicfy.Data.UnitOfWork;
 using Logicfy.Dtos.Kisim;
+using Logicfy.Models;
 using Logicfy.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Logicfy.Api.Controllers
 {
@@ -9,21 +12,41 @@ namespace Logicfy.Api.Controllers
     public class KisimController : BaseController
     {
         private readonly IKisimService _service;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public KisimController(IKisimService service)
+        public KisimController(IKisimService service, IUnitOfWork unitOfWork)
         {
             _service = service;
+            _unitOfWork = unitOfWork;
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var repo = _unitOfWork.Repository<Kisim>();
+
+            var list = await repo.Query()
+                .OrderBy(x => x.Sira)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                status = true,
+                message = "Kısımlar yüklendi",
+                data = list
+            });
         }
 
         // ---------------------------------------------------------
         // 1) ÜNİTEYE AİT TÜM KISIMLAR
         // ---------------------------------------------------------
-        [HttpGet("unite/{uniteId}")]
-        public async Task<IActionResult> GetByUnite(int uniteId)
-        {
-            var data = await _service.GetByUniteIdAsync(uniteId);
-            return Success(data);
-        }
+        //[HttpGet("unite/{uniteId}")]
+        //public async Task<IActionResult> GetByUnite(int uniteId)
+        //{
+        //    var data = await _service.GetByUniteIdAsync(uniteId);
+        //    return Success(data);
+        //}
 
         // ---------------------------------------------------------
         // 2) TEK KISIM GETİR
@@ -75,6 +98,26 @@ namespace Logicfy.Api.Controllers
                 return Fail("Kısım bulunamadı.");
 
             return Success("Silindi.");
+        }
+        // -------------------------------------------------------
+        // GET api/kisim/unite/{uniteId}
+        // -------------------------------------------------------
+        [HttpGet("unite/{uniteId:int}")]
+        public async Task<IActionResult> GetByUnite(int uniteId)
+        {
+            var kisimRepo = _unitOfWork.Repository<Kisim>();
+
+            var kisimlar = await kisimRepo.Query()
+                .Where(x => x.UniteId == uniteId)
+                .OrderBy(x => x.Sira)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                status = true,
+                message = "Kısımlar yüklendi",
+                data = kisimlar
+            });
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Logicfy.Controllers;
 using Logicfy.Dtos;
 using Logicfy.Dtos.Kullanici;
-using Logicfy.Helpers;
 using Logicfy.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

@@ -4,38 +4,44 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace Logicfy.Helpers
+public class JwtTokenHelper
 {
-    public class JwtTokenHelper
+    private readonly IConfiguration _configuration;
+
+    public JwtTokenHelper(IConfiguration configuration)
     {
-        private readonly IConfiguration _config;
+        _configuration = configuration;
+    }
 
-        public JwtTokenHelper(IConfiguration config)
+    public string GenerateToken(int userId, string email, string fullName)
+    {
+        var key = _configuration["Jwt:Key"];
+
+        // Key kontrolü - eğer çok kısa ise uzun bir key oluştur
+        if (string.IsNullOrEmpty(key) || key.Length < 32)
         {
-            _config = config;
+            throw new Exception("JWT Key en az 32 karakter olmalıdır!");
         }
 
-        public string GenerateToken(int userId, string email, string adSoyad)
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, email),
+            new Claim("fullName", fullName),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
 
-            var claims = new[]
-            {
-                new Claim("id", userId.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, email),
-                new Claim("adSoyad", adSoyad ?? "")
-            };
+        var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"] ?? "60")),
+            signingCredentials: credentials
+        );
 
-            var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(int.Parse(_config["Jwt:ExpiresMinutes"])),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
