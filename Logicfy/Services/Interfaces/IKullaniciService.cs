@@ -1,12 +1,13 @@
 ﻿using Logicfy.Dtos;
-using Logicfy.Dtos.Kullanici;
+using Logicfy.Dtos.Auth;
+using Logicfy.Models;
 
 namespace Logicfy.Services.Interfaces
 {
     public interface IKullaniciService
     {
-        Task<KullaniciDto> RegisterAsync(KullaniciRegisterDto dto);
-        Task<KullaniciLoginResultDto> LoginAsync(KullaniciLoginDto dto);
-        Task<KullaniciDto> GetByIdAsync(int id);
+        Task<Kullanici> RegisterAsync(KullaniciRegisterDto dto);
+        Task<Kullanici> LoginAsync(KullaniciLoginDto dto);
+        Task<Kullanici> GetByIdAsync(string id);
     }
 }

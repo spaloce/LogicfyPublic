@@ -1,10 +1,12 @@
 ﻿using Logicfy.Controllers;
 using Logicfy.Dtos.Soru;
 using Logicfy.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Logicfy.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class SoruController : BaseController
     {
@@ -22,7 +24,7 @@ namespace Logicfy.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var data = await _service.GetAllAsync();
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -32,7 +34,7 @@ namespace Logicfy.Api.Controllers
         public async Task<IActionResult> GetByDers(int dersId)
         {
             var data = await _service.GetByDersIdAsync(dersId);
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -43,9 +45,9 @@ namespace Logicfy.Api.Controllers
         {
             var data = await _service.GetByIdAsync(id);
             if (data == null)
-                return Fail("Soru bulunamadı.");
+                return Ok("Soru bulunamadı.");
 
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -56,9 +58,9 @@ namespace Logicfy.Api.Controllers
         {
             var ok = await _service.DeleteAsync(id);
             if (!ok)
-                return Fail("Soru bulunamadı.");
+                return Ok("Soru bulunamadı.");
 
-            return Success("Silindi.");
+            return Ok("Silindi.");
         }
 
         // ---------------------------------------------------------
@@ -68,7 +70,7 @@ namespace Logicfy.Api.Controllers
         public async Task<IActionResult> CreateTip1(int dersId, [FromBody] SoruTip1CreateDto dto)
         {
             var result = await _service.CreateTip1Async(dersId, dto);
-            return Success(result);
+            return Ok(result);
         }
 
         // ---------------------------------------------------------
@@ -80,9 +82,9 @@ namespace Logicfy.Api.Controllers
             var result = await _service.UpdateTip1Async(id, dto);
 
             if (result == null)
-                return Fail("Soru bulunamadı.");
+                return Ok("Soru bulunamadı.");
 
-            return Success(result);
+            return Ok(result);
         }
 
         // ---------------------------------------------------------
@@ -92,7 +94,7 @@ namespace Logicfy.Api.Controllers
         public async Task<IActionResult> CreateTip2(int dersId, [FromBody] SoruTip2CreateDto dto)
         {
             var result = await _service.CreateTip2Async(dersId, dto);
-            return Success(result);
+            return Ok(result);
         }
 
         // ---------------------------------------------------------
@@ -104,9 +106,9 @@ namespace Logicfy.Api.Controllers
             var result = await _service.UpdateTip2Async(id, dto);
 
             if (result == null)
-                return Fail("Soru bulunamadı.");
+                return Ok("Soru bulunamadı.");
 
-            return Success(result);
+            return Ok(result);
         }
 
         // ---------------------------------------------------------
@@ -116,7 +118,7 @@ namespace Logicfy.Api.Controllers
         public async Task<IActionResult> CreateTip3(int dersId, [FromBody] SoruTip3CreateDto dto)
         {
             var result = await _service.CreateTip3Async(dersId, dto);
-            return Success(result);
+            return Ok(result);
         }
 
         // ---------------------------------------------------------
@@ -128,9 +130,9 @@ namespace Logicfy.Api.Controllers
             var result = await _service.UpdateTip3Async(id, dto);
 
             if (result == null)
-                return Fail("Soru bulunamadı.");
+                return Ok("Soru bulunamadı.");
 
-            return Success(result);
+            return Ok(result);
         }
 
         // ---------------------------------------------------------
@@ -140,7 +142,7 @@ namespace Logicfy.Api.Controllers
         public async Task<IActionResult> CreateTip4(int dersId, [FromBody] SoruTip4CreateDto dto)
         {
             var result = await _service.CreateTip4Async(dersId, dto);
-            return Success(result);
+            return Ok(result);
         }
 
         // ---------------------------------------------------------
@@ -152,9 +154,9 @@ namespace Logicfy.Api.Controllers
             var result = await _service.UpdateTip4Async(id, dto);
 
             if (result == null)
-                return Fail("Soru bulunamadı.");
+                return Ok("Soru bulunamadı.");
 
-            return Success(result);
+            return Ok(result);
         }
     }
 }

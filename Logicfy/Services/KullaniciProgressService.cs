@@ -18,7 +18,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         //   SORU ÇÖZÜMÜ
         // ---------------------------------------------------------
-        public async Task SoruCevaplaAsync(int kullaniciId, int soruId, bool dogruMu, string cevapJson, int sureMs)
+        public async Task SoruCevaplaAsync(string kullaniciId, int soruId, bool dogruMu, string cevapJson, int sureMs)
         {
             var soruRepo = _unitOfWork.Repository<Soru>();
             var cevapRepo = _unitOfWork.Repository<KullaniciSoruCevap>();
@@ -68,7 +68,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         //   DERS PROGRESS
         // ---------------------------------------------------------
-        private async Task UpdateDersProgress(int kullaniciId, int dersId)
+        private async Task UpdateDersProgress(string kullaniciId, int dersId)
         {
             var soruRepo = _unitOfWork.Repository<Soru>();
             var cevapRepo = _unitOfWork.Repository<KullaniciSoruCevap>();
@@ -113,7 +113,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         //   KISIM PROGRESS
         // ---------------------------------------------------------
-        private async Task UpdateKisimProgress(int kullaniciId, int kisimId)
+        private async Task UpdateKisimProgress(string kullaniciId, int kisimId)
         {
             var dersRepo = _unitOfWork.Repository<Ders>();
             var dersProgressRepo = _unitOfWork.Repository<KullaniciDersIlerleme>();
@@ -167,7 +167,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         //   ÜNİTE PROGRESS (Kısım Üzerinden)
         // ---------------------------------------------------------
-        private async Task UpdateUniteProgress(int kullaniciId, int uniteId)
+        private async Task UpdateUniteProgress(string kullaniciId, int uniteId)
         {
             var kisimRepo = _unitOfWork.Repository<Kisim>();
             var kisimProgressRepo = _unitOfWork.Repository<KullaniciKisimProgress>();
@@ -225,7 +225,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         //  DERS PROGRESS GET
         // ---------------------------------------------------------
-        public async Task<KullaniciDersIlerleme?> GetDersProgressAsync(int kullaniciId, int dersId)
+        public async Task<KullaniciDersIlerleme?> GetDersProgressAsync(string kullaniciId, int dersId)
         {
             return await _unitOfWork.Repository<KullaniciDersIlerleme>()
                 .Query()
@@ -236,7 +236,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         //  KISIM PROGRESS GET
         // ---------------------------------------------------------
-        public async Task<KullaniciKisimProgress?> GetKisimProgressAsync(int kullaniciId, int kisimId)
+        public async Task<KullaniciKisimProgress?> GetKisimProgressAsync(string kullaniciId, int kisimId)
         {
             return await _unitOfWork.Repository<KullaniciKisimProgress>()
                 .Query()
@@ -247,7 +247,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         //  UNITE PROGRESS GET
         // ---------------------------------------------------------
-        public async Task<KullaniciUnitProgress?> GetUniteProgressAsync(int kullaniciId, int uniteId)
+        public async Task<KullaniciUnitProgress?> GetUniteProgressAsync(string kullaniciId, int uniteId)
         {
             return await _unitOfWork.Repository<KullaniciUnitProgress>()
                 .Query()

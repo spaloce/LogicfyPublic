@@ -1,10 +1,11 @@
-﻿namespace Logicfy.Models
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace Logicfy.Models
 {
-    public class Kullanici : BaseEntity
+    public class Kullanici : IdentityUser
     {
         public string AdSoyad { get; set; }
-        public string Email { get; set; }
-        public string PasswordHash { get; set; }
+        public string Rol { get; set; } = "User"; // User, Admin, vs.
 
         // Gamification
         public int XP { get; set; } = 0;
@@ -24,7 +25,7 @@
 
     public class KullaniciDersKaydi : BaseEntity
     {
-        public int KullaniciId { get; set; }
+        public string KullaniciId { get; set; }
         public int DersId { get; set; }
         public bool AktifMi { get; set; }
 
@@ -34,7 +35,7 @@
 
     public class KullaniciDersIlerleme : BaseEntity
     {
-        public int KullaniciId { get; set; }
+        public string KullaniciId { get; set; }
         public int DersId { get; set; }
         public int TamamlananSoruSayisi { get; set; }
         public int ToplamSoruSayisi { get; set; }
@@ -47,7 +48,7 @@
 
     public class KullaniciUnitProgress : BaseEntity
     {
-        public int KullaniciId { get; set; }
+        public string KullaniciId { get; set; }
         public int UniteId { get; set; }
         public int TamamlananDersSayisi { get; set; }
         public int ToplamDersSayisi { get; set; }
@@ -59,7 +60,7 @@
 
     public class KullaniciKisimProgress : BaseEntity
     {
-        public int KullaniciId { get; set; }
+        public string KullaniciId { get; set; }
         public int KisimId { get; set; }
         public int TamamlananDersSayisi { get; set; }
         public int ToplamDersSayisi { get; set; }
@@ -71,7 +72,7 @@
 
     public class KullaniciSoruCevap : BaseEntity
     {
-        public int KullaniciId { get; set; }
+        public string KullaniciId { get; set; }
         public int SoruId { get; set; }
         public bool DogruMu { get; set; }
         public string CevapJson { get; set; }
@@ -83,7 +84,7 @@
 
     public class KullaniciXpLog : BaseEntity
     {
-        public int KullaniciId { get; set; }
+        public string KullaniciId { get; set; }
         public string Kaynak { get; set; }
         public int Xp { get; set; }
 
@@ -92,7 +93,7 @@
 
     public class KullaniciGunlukSeri : BaseEntity
     {
-        public int KullaniciId { get; set; }
+        public string KullaniciId { get; set; }
         public int SeriSayisi { get; set; }
         public DateTime SonGiris { get; set; }
 

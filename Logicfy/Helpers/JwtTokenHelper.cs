@@ -13,11 +13,10 @@ public class JwtTokenHelper
         _configuration = configuration;
     }
 
-    public string GenerateToken(int userId, string email, string fullName)
+    public string GenerateToken(string userId, string email, string fullName, string rol)
     {
         var key = _configuration["Jwt:Key"];
 
-        // Key kontrolü - eğer çok kısa ise uzun bir key oluştur
         if (string.IsNullOrEmpty(key) || key.Length < 32)
         {
             throw new Exception("JWT Key en az 32 karakter olmalıdır!");
@@ -28,9 +27,12 @@ public class JwtTokenHelper
 
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, email),
+            new Claim("kullaniciId", userId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim("email", email),
             new Claim("fullName", fullName),
+            new Claim(ClaimTypes.Role, rol),
+            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
@@ -44,4 +46,5 @@ public class JwtTokenHelper
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
 }

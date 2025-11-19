@@ -1,9 +1,11 @@
 ﻿using Logicfy.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Logicfy.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<Kullanici>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -29,7 +31,6 @@ namespace Logicfy.Data
         // -----------------------------
         // KULLANICI / İLERLEME
         // -----------------------------
-        public DbSet<Kullanici> Kullanicilar { get; set; }
         public DbSet<KullaniciDersKaydi> KullaniciDersKayitlari { get; set; }
         public DbSet<KullaniciDersIlerleme> KullaniciDersIlerlemeleri { get; set; }
         public DbSet<KullaniciUnitProgress> KullaniciUnitProgressleri { get; set; }
@@ -184,12 +185,6 @@ namespace Logicfy.Data
             // ============================================
             // KULLANICILAR
             // ============================================
-
-            modelBuilder.Entity<Kullanici>(e =>
-            {
-                e.HasKey(x => x.Id);
-                e.Property(x => x.Email).IsRequired();
-            });
 
             // ============================================
             // KULLANICI DERS KAYDI

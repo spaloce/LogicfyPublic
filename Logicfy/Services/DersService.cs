@@ -48,7 +48,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         // TEK DERS
         // ---------------------------------------------------------
-        public async Task<DersDto?> GetByIdAsync(int id)
+        public async Task<DersDto?> GetByIdAsync(string id)
         {
             var entity = await _unitOfWork.Repository<Ders>().GetByIdAsync(id);
 
@@ -82,7 +82,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         // DERS GÜNCELLE
         // ---------------------------------------------------------
-        public async Task<DersDto?> UpdateAsync(int id, DersCreateDto dto)
+        public async Task<DersDto?> UpdateAsync(string id, DersCreateDto dto)
         {
             var repo = _unitOfWork.Repository<Ders>();
             var entity = await repo.GetByIdAsync(id);
@@ -104,7 +104,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         // DERS SİL
         // ---------------------------------------------------------
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(string id)
         {
             var repo = _unitOfWork.Repository<Ders>();
             var entity = await repo.GetByIdAsync(id);

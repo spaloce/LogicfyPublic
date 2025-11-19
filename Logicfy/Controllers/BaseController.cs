@@ -5,25 +5,15 @@ namespace Logicfy.Controllers
 {
     public class BaseController : ControllerBase
     {
-        protected int GetUserId()
+        protected string GetUserId()
         {
-            var id = User?.FindFirstValue(ClaimTypes.NameIdentifier);
-            return id != null ? int.Parse(id) : 0;
-        }
+            var claim = User.FindFirst("kullaniciId")
+                       ?? User.FindFirst(ClaimTypes.NameIdentifier);
 
-        protected IActionResult Success(object data)
-        {
-            return Ok(new { success = true, data });
-        }
+            if (claim == null)
+                throw new Exception("Token içinde kullanıcı Id bulunamadı.");
 
-        protected IActionResult Success(string message)
-        {
-            return Ok(new { success = true, message });
-        }
-
-        protected IActionResult Fail(string message)
-        {
-            return BadRequest(new { success = false, message });
+            return claim.Value;
         }
     }
 }

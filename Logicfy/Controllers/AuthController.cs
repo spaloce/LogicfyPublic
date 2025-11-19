@@ -1,29 +1,35 @@
 ﻿using Logicfy.Controllers;
-using Logicfy.Dtos;
-using Logicfy.Dtos.Kullanici;
+using Logicfy.Dtos.Auth;
+using Logicfy.Models;
 using Logicfy.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Logicfy.Api.Controllers
 {
     [Route("api/[controller]")]
+    [ApiController]
     public class AuthController : BaseController
     {
         private readonly IKullaniciService _kullaniciService;
         private readonly JwtTokenHelper _jwtTokenHelper;
+        private readonly SignInManager<Kullanici> _signInManager;
 
         public AuthController(
             IKullaniciService kullaniciService,
-            JwtTokenHelper jwtTokenHelper)
+            JwtTokenHelper jwtTokenHelper,
+            SignInManager<Kullanici> signInManager)
         {
             _kullaniciService = kullaniciService;
             _jwtTokenHelper = jwtTokenHelper;
+            _signInManager = signInManager;
         }
 
-        // ---------------------------------------------------
-        //  REGISTER
-        // ---------------------------------------------------
+        // -----------------------------------------
+        // REGISTER
+        // -----------------------------------------
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] KullaniciRegisterDto dto)
         {
@@ -31,51 +37,89 @@ namespace Logicfy.Api.Controllers
 
             return Ok(new
             {
-                success = true,
-                message = "Kayıt başarılı.",
-                data = user
+                Ok = true,
+                user = new
+                {
+                    user.Id,
+                    user.Email,
+                    user.AdSoyad
+                }
             });
         }
 
-        // ---------------------------------------------------
-        //  LOGIN
-        // ---------------------------------------------------
+        // -----------------------------------------
+        // LOGIN (Cookie + JWT)
+        // -----------------------------------------
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] KullaniciLoginDto dto)
         {
-            var result = await _kullaniciService.LoginAsync(dto);
+            var user = await _kullaniciService.LoginAsync(dto);
 
-            // Token üret
+            // Cookie login
+            await _signInManager.SignInAsync(user, isPersistent: true);
+
+            // JWT
             var token = _jwtTokenHelper.GenerateToken(
-                result.Kullanici.Id,
-                result.Kullanici.Email,
-                result.Kullanici.AdSoyad
+                user.Id,
+                user.Email,
+                user.AdSoyad,
+                user.Rol
             );
 
             return Ok(new
             {
-                success = true,
+                Ok = true,
                 token,
-                user = result.Kullanici
+                user = new
+                {
+                    user.Id,
+                    user.Email,
+                    user.AdSoyad,
+                    user.Rol,
+                    user.XP,
+                    user.Seviye
+                }
             });
         }
 
-        // ---------------------------------------------------
-        //  ME (JWT'den Kullanıcıyı Çek)
-        // ---------------------------------------------------
+        // -----------------------------------------
+        // ME (JWT ile kullanıcı bilgisi)
+        // -----------------------------------------
         [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> Me()
         {
-            var userId = GetUserId();
+            var userId = GetUserId(); // string
 
             var user = await _kullaniciService.GetByIdAsync(userId);
 
             return Ok(new
             {
-                success = true,
-                user
+                Ok = true,
+                user = new
+                {
+                    user.Id,
+                    user.Email,
+                    user.AdSoyad,
+                    user.Rol,
+                    user.XP,
+                    user.Seviye,
+                    user.Streak
+                }
             });
+        }
+
+        // -----------------------------------------
+        // LOGOUT
+        // -----------------------------------------
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+
+            return Ok(new { Ok = true });
         }
     }
 }

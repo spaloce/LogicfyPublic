@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Logicfy.Dtos;
+using Logicfy.Dtos.Auth;
 using Logicfy.Dtos.Ders;
 using Logicfy.Dtos.Kisim;
-using Logicfy.Dtos.Kullanici;
 using Logicfy.Dtos.ProgramlamaDili;
 using Logicfy.Dtos.Progress;
 using Logicfy.Dtos.Soru;

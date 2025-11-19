@@ -1,10 +1,12 @@
 ﻿using Logicfy.Controllers;
 using Logicfy.Dtos.ProgramlamaDili;
 using Logicfy.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Logicfy.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class ProgramlamaDiliController : BaseController
     {
@@ -22,7 +24,7 @@ namespace Logicfy.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var data = await _service.GetAllAsync();
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -33,9 +35,9 @@ namespace Logicfy.Api.Controllers
         {
             var data = await _service.GetByIdAsync(id);
             if (data == null)
-                return Fail("Programlama dili bulunamadı.");
+                return Ok("Programlama dili bulunamadı.");
 
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -45,7 +47,7 @@ namespace Logicfy.Api.Controllers
         public async Task<IActionResult> Create([FromBody] ProgramlamaDiliCreateDto dto)
         {
             var data = await _service.CreateAsync(dto);
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -57,9 +59,9 @@ namespace Logicfy.Api.Controllers
             var data = await _service.UpdateAsync(id, dto);
 
             if (data == null)
-                return Fail("Programlama dili bulunamadı.");
+                return Ok("Programlama dili bulunamadı.");
 
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -71,9 +73,9 @@ namespace Logicfy.Api.Controllers
             var ok = await _service.DeleteAsync(id);
 
             if (!ok)
-                return Fail("Programlama dili bulunamadı.");
+                return Ok("Programlama dili bulunamadı.");
 
-            return Success("Silindi.");
+            return Ok("Silindi.");
         }
     }
 }

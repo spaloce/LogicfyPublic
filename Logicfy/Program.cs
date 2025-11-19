@@ -4,19 +4,36 @@ using Logicfy.Data;
 using Logicfy.Data.Repositories;
 using Logicfy.Data.Repositories.Interfaces;
 using Logicfy.Data.UnitOfWork;
+using Logicfy.Models;
 using Logicfy.Services;
 using Logicfy.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+// IDENTITY
+builder.Services.AddIdentity<Kullanici, IdentityRole>(options =>
+{
+    options.Password.RequireDigit = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 6;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
+
 // ------------------------------------------------------
-// 1) SERILOG (En üstte kurulmalı)
+// 1) SERILOG
 // ------------------------------------------------------
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -40,7 +57,6 @@ builder.Services.AddControllers()
         options.SerializerSettings.ReferenceLoopHandling =
             Newtonsoft.Json.ReferenceLoopHandling.Ignore;
 
-        // JSON içindeki camelCase kullanıcıya gider
         options.SerializerSettings.ContractResolver =
             new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver();
     });
@@ -48,17 +64,16 @@ builder.Services.AddControllers()
 // ------------------------------------------------------
 // 4) AUTOMAPPER
 // ------------------------------------------------------
-builder.Services.AddAutoMapper(typeof(Program)); // Profil dosyalarını otomatik bulur
+builder.Services.AddAutoMapper(typeof(Program));
 
 // ------------------------------------------------------
 // 5) FLUENT VALIDATION
 // ------------------------------------------------------
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
-// → Validator sınıflarını ekleyeceğiz (2. adımda DTO bölümünde)
 
 // ------------------------------------------------------
-// 6) CORS (Frontend ile haberleşme için)
+// 6) CORS
 // ------------------------------------------------------
 builder.Services.AddCors(options =>
 {
@@ -76,38 +91,45 @@ builder.Services.AddCors(options =>
 });
 
 // ------------------------------------------------------
-// JWT Configuration
-var jwtKey = builder.Configuration["Jwt:Key"];
-if (string.IsNullOrEmpty(jwtKey) || jwtKey.Length < 32)
+// 7) JWT + COOKIE AUTH (HİBRİD ÇÖZÜM)
+// ------------------------------------------------------
+builder.Services.AddAuthentication(options =>
 {
-    // Fallback key - production'da asla kullanmayın!
-    jwtKey = "bu-backup-anahtar-32-karakter-uzunlugunda";
-}
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;   // ⭐ JWT varsayılan
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;       // ⭐ JWT varsayılan
+})
+.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            ClockSkew = TimeSpan.Zero
-        };
-    });
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = "denizsoftyazilim.com",
+        ValidAudience = "denizsoft_yazilim",
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes("DenizsoftTayfun:)DenizsoftTayfun:)DenizsoftTayfun:)DenizsoftTayfun:)DenizsoftTayfun:)"))
+    };
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.Cookie.Name = ".DSPERPAuthToken";
+    options.Cookie.HttpOnly = true;
+    options.ExpireTimeSpan = TimeSpan.FromHours(3500);
+    options.LoginPath = "/Login";
+    options.SlidingExpiration = true;
+});
 
+// ------------------------------------------------------
+// 8) AUTHORIZATION
+// ------------------------------------------------------
 builder.Services.AddAuthorization();
 
-
 // ------------------------------------------------------
-// 7) SWAGGER
+// 9) SWAGGER
 // ------------------------------------------------------
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -116,56 +138,49 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "Logicfy öğrenim platformu API dokümantasyonu"
     });
+
+    // Swagger için JWT desteği ekle
+    var jwtSecurityScheme = new OpenApiSecurityScheme
+    {
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Description = "JWT Bearer token",
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+
+    c.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { jwtSecurityScheme, Array.Empty<string>() }
+    });
 });
 
 // ------------------------------------------------------
-// 8) (OPSİYONEL) IDENTITY – Kimlik yapısı olacaksa
+// 10) REPOSITORY & UNIT OF WORK
 // ------------------------------------------------------
-// builder.Services.AddIdentityCore<Kullanici>(options =>
-// {
-//     options.Password.RequireDigit = false;
-//     options.Password.RequireNonAlphanumeric = false;
-//     options.Password.RequireUppercase = false;
-//     options.Password.RequireLowercase = false;
-//     options.Password.RequiredLength = 6;
-// })
-// .AddEntityFrameworkStores<ApplicationDbContext>();
-
-
-// ------------------------------------------------------
-// 9) REPOSITORY & UNIT OF WORK KAYITLARI
-// ------------------------------------------------------
-
-// === REPOSITORY + UNIT OF WORK ===
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// === PROGRAMLAMA DİLİ ===
 builder.Services.AddScoped<IProgramlamaDiliService, ProgramlamaDiliService>();
-
-// === UNİTE ===
 builder.Services.AddScoped<IUniteService, UniteService>();
-
-// === KISIM ===
 builder.Services.AddScoped<IKisimService, KisimService>();
-
-// === DERS ===
 builder.Services.AddScoped<IDersService, DersService>();
-
-// === SORU ===
 builder.Services.AddScoped<ISoruService, SoruService>();
-
-// === KULLANICI ===
 builder.Services.AddScoped<IKullaniciService, KullaniciService>();
-
-// === PROGRESS MOTORU ===
 builder.Services.AddScoped<IKullaniciProgressService, KullaniciProgressService>();
+builder.Services.AddScoped<IKullaniciLearningPathService, KullaniciLearningPathService>();
 
 builder.Services.AddSingleton<JwtTokenHelper>();
 
-
 // ------------------------------------------------------
-// UYGULAMA PIPELINE
+// 11) PIPELINE
 // ------------------------------------------------------
 var app = builder.Build();
 
@@ -176,11 +191,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
-
 app.UseCors("LogicfyCors");
 
 app.UseHttpsRedirection();
 
+// ⭐ Doğru sıra
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 

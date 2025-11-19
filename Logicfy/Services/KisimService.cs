@@ -48,7 +48,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         // TEK KISIM
         // ---------------------------------------------------------
-        public async Task<KisimDto?> GetByIdAsync(int id)
+        public async Task<KisimDto?> GetByIdAsync(string id)
         {
             var entity = await _unitOfWork.Repository<Kisim>().GetByIdAsync(id);
 
@@ -79,7 +79,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         // KISIM GÜNCELLE
         // ---------------------------------------------------------
-        public async Task<KisimDto?> UpdateAsync(int id, KisimCreateDto dto)
+        public async Task<KisimDto?> UpdateAsync(string id, KisimCreateDto dto)
         {
             var repo = _unitOfWork.Repository<Kisim>();
             var entity = await repo.GetByIdAsync(id);
@@ -99,7 +99,7 @@ namespace Logicfy.Services
         // ---------------------------------------------------------
         // KISIM SİL
         // ---------------------------------------------------------
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(string id)
         {
             var repo = _unitOfWork.Repository<Kisim>();
             var entity = await repo.GetByIdAsync(id);

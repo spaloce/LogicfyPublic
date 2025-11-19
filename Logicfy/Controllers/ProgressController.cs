@@ -34,7 +34,7 @@ namespace Logicfy.Api.Controllers
                 dto.SureMs
             );
 
-            return Ok(new { success = true, message = "Cevap işlendi." });
+            return Ok(new { Ok = true, message = "Cevap işlendi." });
         }
 
         // ---------------------------------------------------------
@@ -46,7 +46,7 @@ namespace Logicfy.Api.Controllers
             var userId = GetUserId();
             var data = await _progressService.GetDersProgressAsync(userId, dersId);
 
-            return Ok(new { success = true, data });
+            return Ok(new { Ok = true, data });
         }
 
         // ---------------------------------------------------------
@@ -58,7 +58,7 @@ namespace Logicfy.Api.Controllers
             var userId = GetUserId();
             var data = await _progressService.GetKisimProgressAsync(userId, kisimId);
 
-            return Ok(new { success = true, data });
+            return Ok(new { Ok = true, data });
         }
 
         // ---------------------------------------------------------
@@ -70,7 +70,7 @@ namespace Logicfy.Api.Controllers
             var userId = GetUserId();
             var data = await _progressService.GetUniteProgressAsync(userId, uniteId);
 
-            return Ok(new { success = true, data });
+            return Ok(new { Ok = true, data });
         }
     }
 }

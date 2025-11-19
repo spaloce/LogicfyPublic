@@ -3,11 +3,13 @@ using Logicfy.Data.UnitOfWork;
 using Logicfy.Dtos.Unite;
 using Logicfy.Models;
 using Logicfy.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Logicfy.Api.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     public class UniteController : BaseController
     {
@@ -45,7 +47,7 @@ namespace Logicfy.Api.Controllers
         public async Task<IActionResult> GetAllByDil(int dilId)
         {
             var data = await _service.GetByDilIdAsync(dilId);
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -56,9 +58,9 @@ namespace Logicfy.Api.Controllers
         {
             var data = await _service.GetByIdAsync(id);
             if (data == null)
-                return Fail("Ünite bulunamadı.");
+                return Ok("Ünite bulunamadı.");
 
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -68,7 +70,7 @@ namespace Logicfy.Api.Controllers
         public async Task<IActionResult> Create(int dilId, [FromBody] UniteCreateDto dto)
         {
             var data = await _service.CreateAsync(dilId, dto);
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -80,9 +82,9 @@ namespace Logicfy.Api.Controllers
             var data = await _service.UpdateAsync(id, dto);
 
             if (data == null)
-                return Fail("Ünite bulunamadı.");
+                return Ok("Ünite bulunamadı.");
 
-            return Success(data);
+            return Ok(data);
         }
 
         // ---------------------------------------------------------
@@ -94,30 +96,9 @@ namespace Logicfy.Api.Controllers
             var ok = await _service.DeleteAsync(id);
 
             if (!ok)
-                return Fail("Ünite bulunamadı.");
+                return Ok("Ünite bulunamadı.");
 
-            return Success("Silindi.");
-        }
-
-        // -------------------------------------------------------
-        // GET api/unite/dil/{dilId}
-        // -------------------------------------------------------
-        [HttpGet("dil/{dilId:int}")]
-        public async Task<IActionResult> GetByDil(int dilId)
-        {
-            var uniteRepo = _unitOfWork.Repository<Unite>();
-
-            var uniteler = await uniteRepo.Query()
-                .Where(x => x.ProgramlamaDiliId == dilId)
-                .OrderBy(x => x.Sira)
-                .ToListAsync();
-
-            return Ok(new
-            {
-                status = true,
-                message = "Üniteler yüklendi",
-                data = uniteler
-            });
+            return Ok("Silindi.");
         }
     }
 }

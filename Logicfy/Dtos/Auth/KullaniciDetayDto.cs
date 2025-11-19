@@ -1,6 +1,6 @@
 ﻿using Logicfy.Dtos.Progress;
 
-namespace Logicfy.Dtos.Kullanici
+namespace Logicfy.Dtos.Auth
 {
     public class KullaniciDetayDto
     {

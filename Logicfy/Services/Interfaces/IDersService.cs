@@ -11,15 +11,15 @@ namespace Logicfy.Services.Interfaces
         Task<List<DersDto>> GetByKisimIdAsync(int kisimId);
 
         // TEK DERS
-        Task<DersDto?> GetByIdAsync(int id);
+        Task<DersDto?> GetByIdAsync(string id);
 
         // OLUŞTUR (KisimId + DTO)
         Task<DersDto> CreateAsync(int kisimId, DersCreateDto dto);
 
         // GÜNCELLE
-        Task<DersDto?> UpdateAsync(int id, DersCreateDto dto);
+        Task<DersDto?> UpdateAsync(string id, DersCreateDto dto);
 
         // SİL
-        Task<bool> DeleteAsync(int id);
+        Task<bool> DeleteAsync(string id);
     }
 }
